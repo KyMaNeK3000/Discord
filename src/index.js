@@ -1,5 +1,7 @@
-const { Client, IntentsBitField } = require('discord.js');
-require('dotenv').config();
+const { Client, IntentsBitField } = require("discord.js")
+
+const dotenv = require("dotenv")
+dotenv.config()
 
 const client = new Client({
     intents: [
@@ -8,10 +10,10 @@ const client = new Client({
         IntentsBitField.Flags.GuildMessages,
         IntentsBitField.Flags.MessageContent,
     ],
-});
+})
 
-client.on('clientReady', (c) => {
-    console.log('KyMaBoT is ready for work')
-});
+client.on("clientReady", (Bot) => {
+    console.log("bot is alive")
+})
 
-client.login(process.env.TOKEN);
+client.login(process.env.TOKEN)
