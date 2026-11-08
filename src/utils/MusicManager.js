@@ -7,8 +7,8 @@ class MusicManager {
      * @returns {Array} any[].
      */
     static getQueue(guildId)  {
-        if (!this.queue.has(guildId)) this.queue.set(guildId, []);
-        return this.queue.get(guildId);
+        if (!MusicManager.queue.has(guildId)) MusicManager.queue.set(guildId, []);
+        return MusicManager.queue.get(guildId);
     }
 
     static add(guildId, url) {
@@ -24,6 +24,8 @@ class MusicManager {
     }
 
     static clear(guildId) {
-        this.queue.delete(guildId);
+        MusicManager.queue.delete(guildId);
     }
 }
+
+module.exports = MusicManager;
