@@ -1,9 +1,8 @@
 const { Client, IntentsBitField, REST, Routes, Collection } = require("discord.js")
-
 const fs = require("node:fs")
 const path = require("node:path")
-
 const dotenv = require("dotenv")
+const play = require("play-dl");
 dotenv.config()
 
 const BotClient = new Client({
@@ -17,7 +16,7 @@ const BotClient = new Client({
 
 BotClient.commands = new Collection();
 
-BotClient.on("clientReady", (Bot) => {
+BotClient.on("clientReady", async(Bot) => {
     // register & update commands
     const commands = []
     const commandsPath = path.join(__dirname, "commands")
@@ -44,6 +43,12 @@ BotClient.on("clientReady", (Bot) => {
         console.log("[ERROR]: ${error}")
     }
     console.log("bot is alive")
+
+    await play.setToken({
+        youtube: {
+            cookie: "./cookies.json"
+        }
+    });
 })
 
 BotClient.on("interactionCreate", async interaction => {
