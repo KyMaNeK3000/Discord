@@ -55,7 +55,6 @@ module.exports = {
         }
 
         try {
-            // 1. Создаем голосовое подключение
             const connection = joinVoiceChannel({
                 channelId: voiceChannel.id,
                 guildId: interaction.guildId,
@@ -64,21 +63,6 @@ module.exports = {
                 selfMute: false
             });
 
-            // Сетевой фикс для Windows (UDP-интервалы)
-            connection.on('stateChange', (oldState, newState) => {
-                const oldNetworking = Reflect.get(oldState, 'networking');
-                const newNetworking = Reflect.get(newState, 'networking');
-
-                const networkStateChangeHandler = (oldNetworkState, newNetworkState) => {
-                    const newUdp = Reflect.get(newNetworkState, 'udp');
-                    clearInterval(newUdp?.keepAliveInterval);
-                };
-
-                oldNetworking?.off('stateChange', networkStateChangeHandler);
-                newNetworking?.on('stateChange', networkStateChangeHandler);
-            });
-
-            // 2. Инициализируем плеер
             let player = players.get(interaction.guildId);
             if (!player) {
                 player = createAudioPlayer({
@@ -99,36 +83,30 @@ module.exports = {
 
             connection.subscribe(player);
 
-            // 3. Получаем аудио-поток
+            await entersState(connection, VoiceConnectionStatus.Ready, 20_000);
+
             const rawStream = yt.download(videoData.url, {
                 quality: Quality.HighestAudio,
-                filter: format => format.hasAudio && !format.hasVideo,
-                highWaterMark: 1 << 25,
-                dlChunkSize: 0
+                filter: {
+                    hasAudio: true,
+                    hasVideo: false,
+                },
+                highWaterMark: 1 << 20,
             });
 
-            // Стабилизатор потока через PassThrough буфер
-            const pcmStream = new PassThrough({ highWaterMark: 1 << 25 });
-            rawStream.pipe(pcmStream);
-
-            rawStream.on('error', err => {
-                console.error('Ошибка ytdl стрима:', err.message);
+            rawStream.on('error', error => {
+                console.error('Ошибка загрузки Youtube:', error);
             });
 
-            // 4. Оборачиваем стабилизированный поток
+            const probed = await demuxProbe(rawStream);
+
             const resource = createAudioResource(pcmStream, {
-                inputType: StreamType.Arbitrary
+                inputType: probed.type
             });
 
             player.play(resource);
 
-            // Дожидаемся Ready от сети в фоне
-            entersState(connection, VoiceConnectionStatus.Ready, 10_000)
-                .then(() => console.log("Голосовое соединение успешно перешло в Ready!"))
-                .catch(() => {
-                    console.log("Сеть не ответила. Перезапуск сетевого адаптера...");
-                    connection.configureNetworking();
-                });
+            await entersState(connection, VoiceConnectionStatus.Playing, 15_000);
 
         } catch (error) {
             console.error("Ошибка во время воспроизведения через ytdl:", error);
