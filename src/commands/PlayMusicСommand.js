@@ -100,13 +100,13 @@ module.exports = {
 
             const probed = await demuxProbe(rawStream);
 
-            const resource = createAudioResource(pcmStream, {
+            const resource = createAudioResource(probed.stream, {
                 inputType: probed.type
             });
 
             player.play(resource);
 
-            await entersState(connection, VoiceConnectionStatus.Playing, 15_000);
+            await entersState(player, AudioPlayerStatus.Playing, 15_000);
 
         } catch (error) {
             console.error("Ошибка во время воспроизведения через ytdl:", error);
