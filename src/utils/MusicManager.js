@@ -1,6 +1,7 @@
 class MusicManager {
     static queue = new Map();
     static idCounters = new Map();
+    static players = new Map();
 
     // Получает очередь определенного сервера
     /**
