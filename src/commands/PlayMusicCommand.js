@@ -1,22 +1,36 @@
-const { SlashCommandBuilder } = require("discord.js");
+const { SlashCommandBuilder, EmbedBuilder} = require("discord.js");
 const MusicManager = require("../utils/MusicManager");
-const URLGetter = require("../utils/URLGetter");
+const VideoData = require("../utils/VideoData");
 
 module.exports = {
     data: new SlashCommandBuilder()
         .setName("play")
-        .setDescription("plays music from url")
+        .setDescription("Plays music from url")
         .addStringOption(option =>
             option.setName("url")
                 .setDescription("Write a youtube url")
                 .setRequired(true)),
     async execute(interaction) {
+        const embed = new EmbedBuilder();
         const url = interaction.options.getString("url");
-        MusicManager.add(interaction.guildId, url)
-        // Потом нужно сделать чтобы выводилась имя видео, а не ссылка
-        await interaction.reply({
-            content: `${MusicManager.getQueue(interaction.guildId).length}. Added in queue: **${await URLGetter.getVideoTitle(url)}**`,
-            set: true
-        });
+        const videoData = await VideoData.create(url);
+        if (!videoData) {
+            embed.setTitle("[ERROR]")
+                .setDescription("❌ Invalid URL")
+                .setColor("Red");
+            return await interaction.reply({ embeds: [embed], ephemeral: true });
+        }
+
+        MusicManager.add(interaction.guildId, videoData)
+
+        embed.setTitle(videoData.title)
+            .setColor('Green')
+            .setDescription(`**Track ID:** \`${videoData.id}\`\n**Duration:** \`${VideoData.formatDuration(videoData.lengthSeconds)}\``)
+            .setAuthor({
+                name: videoData.authorName,
+                iconURL: videoData.authorAvatar
+            });
+
+        await interaction.reply({ embeds: [embed] });
     },
 }
