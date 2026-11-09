@@ -72,18 +72,31 @@ module.exports = {
                 });
                 players.set(interaction.guildId, player);
 
+                console.log("[1] Voice connection created");
+                console.log('[2] State:', connection.state.status)
+
+
                 player.on('stateChange', (oldState, newState) => {
-                    console.log(`Плеер изменил состояние: с ${oldState.status} на ${newState.status}`);
+                    console.log(`[STATE]: ${oldState.status} -> ${newState.status}`);
                 });
+
+                connection.on('debug', message => {
+                    console.log(`[DEBUG]:${message}`);
+                })
 
                 player.on('error', error => {
-                    console.error('Ошибка Аудио-Плеера:', error.message);
+                    console.error('[ERROR]:', error.message);
                 });
-            }
 
+
+            }
+            console.log("[3] Listeners attached");
             connection.subscribe(player);
 
             await entersState(connection, VoiceConnectionStatus.Ready, 20_000);
+
+            console.log("[4] Voice Ready!");
+            console.log("[5] Starting Youtube downland");
 
             const rawStream = yt.download(videoData.url, {
                 quality: Quality.HighestAudio,
@@ -94,19 +107,28 @@ module.exports = {
                 highWaterMark: 1 << 20,
             });
 
+            console.log("[6] Youtube stream created");
+
             rawStream.on('error', error => {
                 console.error('Ошибка загрузки Youtube:', error);
             });
 
             const probed = await demuxProbe(rawStream);
 
+            console.log("[7] Audio format:", probed.type);
+
             const resource = createAudioResource(probed.stream, {
                 inputType: probed.type
             });
 
+            console.log("[8] Audio resource created");
+
             player.play(resource);
 
+            console.log("[9] Player.play() called");
+
             await entersState(player, AudioPlayerStatus.Playing, 15_000);
+            console.log("[10] Playback started");
 
         } catch (error) {
             console.error("Ошибка во время воспроизведения через ytdl:", error);
