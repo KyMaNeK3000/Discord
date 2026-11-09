@@ -15,12 +15,22 @@ module.exports = {
         const serverQueue = MusicManager.getQueue(interaction.guild.id);
         const index = MusicManager.findIndexById(interaction.guildId, trackId);
 
-        if (serverQueue.length < 1) {
+        if (!serverQueue || serverQueue.length < 1) {
             embed.setTitle("[ERROR]: Queue is empty")
                 .setDescription("❌ Add music in queue with command /play")
                 .setColor("Red");
             return await interaction.reply({ embeds: [embed], ephemeral: true });
         }
+
+        const botVoiceChannel = interaction.guild.members.me.voice.channel;
+        const memberVoiceChannel = interaction.member.voice.channel;
+        if (!botVoiceChannel || !memberVoiceChannel || botVoiceChannel.id !== memberVoiceChannel.id) {
+            embed.setTitle("[ERROR]")
+                .setDescription("❌ Вы должны находиться в том же голосовом канале, что и бот, чтобы удалять треки!")
+                .setColor("Red");
+            return await interaction.reply({ embeds: [embed], ephemeral: true });
+        }
+
 
         if (index === -1) {
             embed.setTitle(`[ERROR]: Track with ID: ${trackId} was not found in queue!`)
@@ -35,7 +45,12 @@ module.exports = {
             .setColor('Green')
             .setDescription(`**${videoData.title}**`);
 
-        MusicManager.removeById(interaction.guildId, trackId);
+        if (index === 0) {
+            MusicManager.skip(interaction.guild.id);
+            await MusicManager.playNext(interaction.guild.id);
+        } else {
+            MusicManager.removeById(interaction.guild.id, trackId);
+        }
 
         await interaction.reply({ embeds: [embed] });
     },
