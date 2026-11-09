@@ -16,9 +16,19 @@ module.exports = {
         ];
         const randomText = text[Math.floor(Math.random() * text.length)];
 
-        if (serverQueue.length < 1) {
+        if (!serverQueue || serverQueue.length < 1) {
             embed.setTitle("[ERROR]: Queue already empty")
                 .setDescription("❌ Add music in queue with command /play")
+                .setColor("Red");
+            return await interaction.reply({ embeds: [embed], ephemeral: true });
+        }
+
+        const botVoiceChannel = interaction.guild.members.me.voice.channel;
+        const memberVoiceChannel = interaction.member.voice.channel;
+
+        if (botVoiceChannel && (!memberVoiceChannel || botVoiceChannel.id !== memberVoiceChannel.id)) {
+            embed.setTitle("[ERROR]")
+                .setDescription("❌ Вы должны находиться в том же голосовом канале, что и бот, чтобы очистить очередь!")
                 .setColor("Red");
             return await interaction.reply({ embeds: [embed], ephemeral: true });
         }
