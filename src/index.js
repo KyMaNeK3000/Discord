@@ -1,4 +1,6 @@
 const { Client, IntentsBitField, REST, Routes, Collection, EmbedBuilder, Partials} = require("discord.js")
+const { DatabaseSync } = require("node:sqlite")
+
 const fs = require("node:fs")
 const path = require("node:path")
 
@@ -16,6 +18,8 @@ const BotClient = new Client({
     ],
     partials: [Partials.Channel, Partials.Message],
 })
+
+const Datastore = new DatabaseSync("../.db")
 
 BotClient.commands = new Collection();
 
@@ -68,11 +72,6 @@ BotClient.on("ready", async (Bot) => {
     }
 
     console.log(`Бот ${Bot.user.tag} запущен и готов к работе!`);
-    try {
-        console.log("[play-dl]: Токены авторизации YouTube успешно подключены.");
-    } catch (e) {
-        console.error("[play-dl Error]: Не удалось загрузить cookies.json:", e.message);
-    }
 });
 
 BotClient.on("interactionCreate", async interaction => {
@@ -89,7 +88,6 @@ BotClient.on("interactionCreate", async interaction => {
     } catch (error) {
         console.error(error);
     }
-    console.log("bot is alive")
 })
 
 const DEVELOPERS = [process.env.DEVELOPER_1, process.env.DEVELOPER_2];

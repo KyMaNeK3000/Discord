@@ -16,7 +16,6 @@ module.exports = {
             .setTitle("[BOT]")
             .setColor('Green')
             .setDescription("Bot is successfully stopped!");
-
         await interaction.reply({ embeds: [embed] });
     },
 }
