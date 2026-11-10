@@ -1,6 +1,7 @@
 const { SlashCommandBuilder, EmbedBuilder} = require("discord.js");
-const MusicManager = require("../utils/MusicManager");
-const VideoData = require("../utils/VideoData");
+const MusicManager = require("../../utils/music/MusicManager");
+const VideoData = require("../../utils/music/VideoData");
+const VoiceGuard = require("../../utils/music/VoiceGuard");
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -10,25 +11,15 @@ module.exports = {
         const embed = new EmbedBuilder();
         const serverQueue = MusicManager.getQueue(interaction.guild.id);
 
-        if (!serverQueue || serverQueue.length < 1) {
-            embed.setTitle("[ERROR]: Queue is empty")
-                .setDescription("❌ Add music in queue with command /play")
-                .setColor("Red");
-            return await interaction.reply({ embeds: [embed], ephemeral: true });
-        }
+        const voiceError = await VoiceGuard.checkSameVoice(interaction);
+        if (voiceError) return await interaction.reply({ embeds: [voiceError], ephemeral: true });
+
+        const queueError = await VoiceGuard.checkQueueEmpty(interaction);
+        if (queueError) return await interaction.reply({ embeds: [queueError], ephemeral: true });
 
         if (serverQueue.length < 2) {
             embed.setTitle("[ERROR]: There is no next track in the queue!")
                 .setDescription("❌ Add music in queue with command /play")
-                .setColor("Red");
-            return await interaction.reply({ embeds: [embed], ephemeral: true });
-        }
-
-        const botVoiceChannel = interaction.guild.members.me.voice.channel;
-        const memberVoiceChannel = interaction.member.voice.channel;
-        if (!botVoiceChannel || !memberVoiceChannel || botVoiceChannel.id !== memberVoiceChannel.id) {
-            embed.setTitle("[ERROR]")
-                .setDescription("❌ Вы должны находиться в том же голосовом канале, что и бот, чтобы пропустить трек!")
                 .setColor("Red");
             return await interaction.reply({ embeds: [embed], ephemeral: true });
         }
@@ -40,7 +31,7 @@ module.exports = {
             MusicManager.skip(interaction.guild.id);
         }
 
-        await new Promise(resolve => setTimeout(resolve, 200));
+        // await new Promise(resolve => setTimeout(resolve, 200));
 
         const videoData = serverQueue[0];
 

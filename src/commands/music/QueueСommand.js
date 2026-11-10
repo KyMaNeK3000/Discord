@@ -1,22 +1,18 @@
 const { SlashCommandBuilder, EmbedBuilder} = require("discord.js");
-const MusicManager = require("../utils/MusicManager");
-const VideoData = require("../utils/VideoData");
+const MusicManager = require("../../utils/music/MusicManager");
+const VideoData = require("../../utils/music/VideoData");
+const VoiceGuard = require("../../utils/music/VoiceGuard");
 
 module.exports = {
     data: new SlashCommandBuilder()
         .setName("queue")
         .setDescription("Check queue list"),
     async execute(interaction) {
-        const embed = new EmbedBuilder();
         const queueRawMusic = [];
         const serverQueue = MusicManager.getQueue(interaction.guild.id);
 
-        if (!serverQueue || serverQueue.length === 0) {
-            embed.setTitle("[ERROR]: Queue is empty")
-                .setDescription("❌ Add music in queue with command /play")
-                .setColor("Red");
-            return await interaction.reply({ embeds: [embed], ephemeral: true });
-        }
+        const queueError = await VoiceGuard.checkQueueEmpty(interaction);
+        if (queueError) return await interaction.reply({ embeds: [queueError], ephemeral: true });
 
         const firstTrack = serverQueue[0];
 
@@ -38,7 +34,8 @@ module.exports = {
 
         const queueMusic = queueRawMusic.join('\n');
 
-        embed.setTitle("Queue List")
+        const embed = new EmbedBuilder()
+            .setTitle("Queue List")
             .setDescription(queueMusic)
             .setColor('Orange');
 

@@ -17,40 +17,66 @@ const BotClient = new Client({
 
 BotClient.commands = new Collection();
 
-BotClient.on("clientReady", async(Bot) => {
-    // register & update commands
-    const commands = []
-    const commandsPath = path.join(__dirname, "commands")
+BotClient.on("ready", async (Bot) => {
+    const commands = [];
+    const commandsPath = path.join(__dirname, "commands");
 
-    const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.js'))
-    const rest = new REST({version: "10"}).setToken(process.env.TOKEN)
+    const commandFolders = fs.readdirSync(commandsPath);
 
-    for (const file of commandFiles) {
-        const filePath = path.join(commandsPath, file)
-        const command = require(filePath)
-        if ("data" in command && "execute" in command) {
-            BotClient.commands.set(command.data.name, command);
-            commands.push(command.data.toJSON())
-        } else {
-            console.log(`[WARN]: In command ${filePath} missed "data" or "execute".`)
+    for (const folder of commandFolders) {
+        const folderPath = path.join(commandsPath, folder);
+
+        if (fs.lstatSync(folderPath).isDirectory()) {
+            const commandFiles = fs.readdirSync(folderPath).filter(file => file.endsWith('.js'));
+
+            for (const file of commandFiles) {
+                const filePath = path.join(folderPath, file);
+                const command = require(filePath);
+
+                if ("data" in command && "execute" in command) {
+                    BotClient.commands.set(command.data.name, command);
+                    commands.push(command.data.toJSON());
+                } else {
+                    console.log(`[WARN]: В команде ${filePath} отсутствует "data" или "execute".`);
+                }
+            }
+        } else if (folder.endsWith('.js')) {
+            const command = require(folderPath);
+            if ("data" in command && "execute" in command) {
+                BotClient.commands.set(command.data.name, command);
+                commands.push(command.data.toJSON());
+            }
         }
     }
+    const rest = new REST({ version: "10" }).setToken(process.env.TOKEN);
 
     try {
-        BotClient.guilds.cache.forEach(async(Guild) => {
-            await rest.put(Routes.applicationCommands(Bot.user.id, Guild.id), { body: commands })
-        })
-    } catch (error) {
-        console.log("[ERROR]: ${error}")
-    }
-    console.log("bot is alive")
+        console.log(`[REST]: Началось обновление ${commands.length} слэш-команд...`);
 
-    await play.setToken({
-        youtube: {
-            cookie: "./cookies.json"
-        }
-    });
-})
+        await rest.put(Routes.applicationCommands(Bot.user.id), { body: [] });
+        console.log("[REST]: Глобальный кэш старых команд успешно очищен.");
+
+        BotClient.guilds.cache.forEach((Guild) => {
+            rest.put(Routes.applicationGuildCommands(Bot.user.id, Guild.id), { body: commands });
+        });
+
+        console.log("[REST]: Все слэш-команды успешно зарегистрированы локально по серверам!");
+    } catch (error) {
+        console.error(`[ERROR REST]: ${error}`);
+    }
+
+    console.log(`Бот ${Bot.user.tag} запущен и готов к работе!`);
+    try {
+        await play.setToken({
+            youtube: {
+                cookie: "./cookies.json"
+            }
+        });
+        console.log("[play-dl]: Токены авторизации YouTube успешно подключены.");
+    } catch (e) {
+        console.error("[play-dl Error]: Не удалось загрузить cookies.json:", e.message);
+    }
+});
 
 BotClient.on("interactionCreate", async interaction => {
     if (!interaction.isChatInputCommand()) return;
