@@ -5,7 +5,7 @@ const ALLOWED_USERS = [process.env.DEVELOPER_1, process.env.DEVELOPER_2];
 
 module.exports = {
     data: new SlashCommandBuilder()
-        .setName("send")
+        .setName("dm")
         .setDescription("Sends messages in DM from bot")
         .addUserOption(option =>
             option.setName("user")
@@ -16,15 +16,13 @@ module.exports = {
                 .setDescription("Write a message")
                 .setRequired(true)),
     async execute(interaction) {
-        await interaction.deferReply({ ephemeral: true });
-
         const embed = new EmbedBuilder();
 
         if (!ALLOWED_USERS.includes(interaction.user.id)) {
             embed.setTitle("[ERROR]")
                 .setDescription("❌ Лох, у тебя нет прав чтобы использовать эту команду лол боже")
                 .setColor("Red");
-            return await interaction.editReply({ embeds: [embed] });
+            return await interaction.reply({ embeds: [embed], ephemeral: true });
         }
 
         const targetUser = interaction.options.getUser("user");
@@ -36,13 +34,13 @@ module.exports = {
             embed.setTitle("[BOT: Sent Successfully]")
                 .setColor('Green')
                 .setDescription(`✉️ **Message for:** \`${targetUser.tag}\`\n**Text:** \`${textMessage}\``);
-            return await interaction.editReply({ embeds: [embed] });
+            return await interaction.reply({ embeds: [embed], ephemeral: true });
 
         } catch (error) {
             embed.setTitle("[ERROR]")
                 .setDescription(`❌ Не удалось отправить сообщение. Возможно, у пользователя закрыта личка или он заблокировал бота.`)
                 .setColor("Red");
-            return await interaction.editReply({ embeds: [embed] });
+            return await interaction.reply({ embeds: [embed], ephemeral: true });
         }
     },
 }
