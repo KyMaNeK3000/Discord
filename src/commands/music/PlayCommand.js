@@ -72,9 +72,7 @@ module.exports = {
                 .setColor("Red");
             return await interaction.reply({ embeds: [embed], ephemeral: true });
         }
-
-        await interaction.deferReply();
-
+        
         const videoData = await VideoData.create(url);
         if (!videoData) {
             embed.setTitle("[ERROR]")

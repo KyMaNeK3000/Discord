@@ -82,6 +82,7 @@ BotClient.on("interactionCreate", async interaction => {
     }
 
     try {
+        await interaction.deferReply();
         await command.execute(interaction);
     } catch (error) {
         console.error(error);
@@ -94,8 +95,6 @@ BotClient.on("messageCreate", async (message) => {
     if (message.author.bot) return;
 
     if (!message.guild) {
-        console.log(`[DM Получено] От ${message.author.tag}: ${message.content}`);
-
         const result = `${message.author}\n${message.content || "[Вложение или Пусто]"}`
 
         for (const devId of DEVELOPERS) {
