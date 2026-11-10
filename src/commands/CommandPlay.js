@@ -1,6 +1,7 @@
 const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
 const MusicManager = require("../utils/MusicManager");
 const VideoData = require("../utils/VideoData");
+
 const {
     joinVoiceChannel,
     createAudioResource,
@@ -12,7 +13,7 @@ const {
     NoSubscriberBehavior,
     demuxProbe
 } = require("@discordjs/voice");
-const play = require("play-dl");
+
 const { Ytdl, Quality } = require('@distube/ytdl-core');
 const yt = new Ytdl();
 const { PassThrough } = require('stream');
