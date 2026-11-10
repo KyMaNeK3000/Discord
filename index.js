@@ -23,7 +23,25 @@ BotClient.commands = new Collection();
 
 BotClient.on("ready", async (Bot) => {
     const commands = [];
-    const commandsPath = path.join(__dirname, "commands");
+    let commandsPath = path.join(__dirname, "src", "commands");
+
+    if (!fs.existsSync(commandsPath)) {
+        const rootFiles = fs.readdirSync(__dirname);
+        const srcDir = rootFiles.find(f => f.toLowerCase() === "src");
+        if (srcDir) {
+            const srcFiles = fs.readdirSync(path.join(__dirname, srcDir));
+            const commandsDir = srcFiles.find(f => f.toLowerCase() === "commands");
+            if (commandsDir) {
+                commandsPath = path.join(__dirname, srcDir, commandsDir);
+            }
+        }
+    }
+    if (!fs.existsSync(commandsPath)) {
+        console.error(`\n[CRITICAL ERROR]: Бот не смог найти папку с командами!`);
+        console.error(`Убедитесь, что внутри папки 'src' на хостинге лежит папка 'commands' с файлами команд.`);
+        console.error(`Проверенный путь: ${commandsPath}\n`);
+        return;
+    }
 
     const commandFolders = fs.readdirSync(commandsPath);
 
