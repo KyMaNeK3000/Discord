@@ -1,5 +1,5 @@
 const { SlashCommandBuilder, EmbedBuilder} = require("discord.js");
-const dotenv = require("dotenv")
+// const dotenv = require("dotenv")
 
 const ALLOWED_USERS = [process.env.DEVELOPER_1, process.env.DEVELOPER_2];
 
@@ -27,21 +27,19 @@ module.exports = {
 
         const targetUser = interaction.options.getUser("user");
         const textMessage = interaction.options.getString("message");
-
+        
         try {
             await targetUser.send({ content: textMessage });
 
             embed.setTitle("[BOT: Sent Successfully]")
                 .setColor('Green')
                 .setDescription(`✉️ **Message for:** \`${targetUser.tag}\`\n**Text:** \`${textMessage}\``);
-
             await interaction.reply({ embeds: [embed], ephemeral: true });
 
         } catch (error) {
             embed.setTitle("[ERROR]")
                 .setDescription(`❌ Не удалось отправить сообщение. Возможно, у пользователя закрыта личка или он заблокировал бота.`)
                 .setColor("Red");
-
             await interaction.reply({ embeds: [embed], ephemeral: true });
         }
     },
