@@ -94,12 +94,22 @@ BotClient.on("messageCreate", async (message) => {
     if (message.author.bot) return;
 
     if (!message.guild) {
-        const result = `${message.author}\n${message.content || "[Вложение или Пусто]"}`
+        const result = `${message.author}\n${message.content || ""}`;
+        const attachments = Array.from(message.attachments.values()).map(attachment => attachment.url);
+
+        const payload = { content: result };
+
+        if (attachments.length > 0) {
+            payload.files = attachments;
+        } else if (!message.content) {
+            payload.content += "\n[Вложение или Пусто]";
+        }
 
         for (const devId of DEVELOPERS) {
+            if (!devId) continue;
             try {
                 const developer = await BotClient.users.fetch(devId);
-                await developer.send({ content: result });
+                await developer.send(payload);
             } catch (err) {
                 console.error(`Не удалось переслать ЛС разработчику с ID ${devId}:`, err.message);
             }
