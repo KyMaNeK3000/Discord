@@ -1,4 +1,4 @@
-const { Client, IntentsBitField, REST, Routes, Collection } = require("discord.js")
+const { Client, IntentsBitField, REST, Routes, Collection, EmbedBuilder, Partials} = require("discord.js")
 const fs = require("node:fs")
 const path = require("node:path")
 const dotenv = require("dotenv")
@@ -12,7 +12,9 @@ const BotClient = new Client({
         IntentsBitField.Flags.GuildMessages,
         IntentsBitField.Flags.MessageContent,
         IntentsBitField.Flags.GuildVoiceStates,
+        IntentsBitField.Flags.DirectMessages,
     ],
+    partials: [Partials.Channel, Partials.Message],
 })
 
 BotClient.commands = new Collection();
@@ -93,5 +95,26 @@ BotClient.on("interactionCreate", async interaction => {
         console.error(error);
     }
 })
+
+const DEVELOPERS = [process.env.DEVELOPER_1, process.env.DEVELOPER_2];
+
+BotClient.on("messageCreate", async (message) => {
+    if (message.author.bot) return;
+
+    if (!message.guild) {
+        console.log(`[DM Получено] От ${message.author.tag}: ${message.content}`);
+
+        const result = `${message.author}\n${message.content || "[Вложение или Пусто]"}`
+
+        for (const devId of DEVELOPERS) {
+            try {
+                const developer = await BotClient.users.fetch(devId);
+                await developer.send({ content: result });
+            } catch (err) {
+                console.error(`Не удалось переслать ЛС разработчику с ID ${devId}:`, err.message);
+            }
+        }
+    }
+});
 
 BotClient.login(process.env.TOKEN)
