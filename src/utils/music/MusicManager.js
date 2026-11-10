@@ -14,14 +14,14 @@ const { PassThrough } = require('stream');
 class MusicManager {
     static queue = new Map();
     static idCounters = new Map();
-    static players = new Map();
+    static players = new Map()
 
-    // Получает очередь определенного сервера
     /**
      * Get queue for server
      * @param {string} guildId string.
      * @returns {Array<VideoData>} VideoInfo[].
      */
+    
     static getQueue(guildId)  {
         if (!MusicManager.queue.has(guildId)) MusicManager.queue.set(guildId, []);
         return MusicManager.queue.get(guildId);

@@ -19,8 +19,6 @@ const BotClient = new Client({
     partials: [Partials.Channel, Partials.Message],
 })
 
-const Datastore = new DatabaseSync("../.db")
-
 BotClient.commands = new Collection();
 
 BotClient.on("ready", async (Bot) => {

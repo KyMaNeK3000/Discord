@@ -7,7 +7,6 @@ const {
     joinVoiceChannel,
     createAudioResource,
     createAudioPlayer,
-    StreamType,
     AudioPlayerStatus,
     VoiceConnectionStatus,
     entersState,
@@ -19,12 +18,6 @@ const { Ytdl, Quality, parseVideoId  } = require('@distube/ytdl-core');
 
 const yt = new Ytdl();
 const VoiceGuard = require("../../utils/music/VoiceGuard");
-
-// try {
-    // process.env.FFMPEG_PATH = require('ffmpeg-static');
-// } catch (e) {
-    // console.error("ffmpeg-static не найден");
-// }
 
 async function startResource(guildId, player, url) {
     const rawStream = yt.download(url, {
