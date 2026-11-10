@@ -46,16 +46,19 @@ class MusicManager {
             }
         });
 
-        // Отслеживаем завершение трека для автоматического переключения
-        player.on(AudioPlayerStatus.Idle, () => {
-            console.log(`[MusicManager]: Трек завершился на сервере ${guildId}. Запуск следующего...`);
-            MusicManager.skip(guildId); // Удаляем отыгравший первый трек
-            MusicManager.playNext(guildId); // Запускаем идущий следом
+        player.on(AudioPlayerStatus.Idle, (oldState) => {
+            if (oldState.status === AudioPlayerStatus.Paused) {
+                console.log(`[MusicManager]: Плеер вышел из паузы на сервере ${guildId}. Пропускаем очистку очереди.`);
+                return;
+            }
+
+            console.log(`[MusicManager]: Трек действительно завершился на сервере ${guildId}. Запуск следующего...`);
+            MusicManager.skip(guildId);
+            MusicManager.playNext(guildId);
         });
 
         player.on('error', error => {
             console.error(`[MusicManager Error] Сервер ${guildId}:`, error.message);
-            // При ошибке потока также пробуем переключиться дальше, чтобы бот не зависал в молчании
             MusicManager.skip(guildId);
             MusicManager.playNext(guildId);
         });
@@ -129,8 +132,8 @@ class MusicManager {
         return this.getQueue(guildId).shift();
     }
 
-    // Полность очищает очередь
-    static clear(guildId) {
+    // Останавливает играть
+    static stop(guildId) {
         MusicManager.queue.delete(guildId);
         MusicManager.idCounters.delete(guildId);
 
@@ -142,7 +145,37 @@ class MusicManager {
 
         const connection = getVoiceConnection(guildId);
         if (connection) {
-            connection.destroy(); // Бот выходит из голосового канала при полной очистке
+            connection.destroy();
+        }
+    }
+
+    // Track set on pause
+    static pause(guildId) {
+        const player = MusicManager.players.get(guildId);
+        if (player && player.state.status === AudioPlayerStatus.Playing) {
+            return player.pause();
+        }
+        return false;
+    }
+
+    // Continue track
+    static resume(guildId) {
+        const player = MusicManager.players.get(guildId);
+        if (player && player.state.status === AudioPlayerStatus.Paused) {
+            return player.unpause();
+        }
+        return false;
+    }
+
+    // Полность очищает очередь
+    static clear(guildId) {
+        MusicManager.queue.delete(guildId);
+        MusicManager.idCounters.delete(guildId);
+
+        const player = MusicManager.players.get(guildId);
+        if (player) {
+            player.stop();
+            MusicManager.players.delete(guildId);
         }
     }
 }
