@@ -1,5 +1,6 @@
 const { SlashCommandBuilder, EmbedBuilder} = require("discord.js");
-const MusicManager = require("../utils/MusicManager");
+const MusicManager = require("../../utils/music/MusicManager");
+const VoiceGuard = require("../../utils/music/VoiceGuard");
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -15,22 +16,11 @@ module.exports = {
         const serverQueue = MusicManager.getQueue(interaction.guild.id);
         const index = MusicManager.findIndexById(interaction.guildId, trackId);
 
-        if (!serverQueue || serverQueue.length < 1) {
-            embed.setTitle("[ERROR]: Queue is empty")
-                .setDescription("❌ Add music in queue with command /play")
-                .setColor("Red");
-            return await interaction.reply({ embeds: [embed], ephemeral: true });
-        }
+        const voiceError = await VoiceGuard.checkSameVoice(interaction);
+        if (voiceError) return await interaction.reply({ embeds: [voiceError], ephemeral: true });
 
-        const botVoiceChannel = interaction.guild.members.me.voice.channel;
-        const memberVoiceChannel = interaction.member.voice.channel;
-        if (!botVoiceChannel || !memberVoiceChannel || botVoiceChannel.id !== memberVoiceChannel.id) {
-            embed.setTitle("[ERROR]")
-                .setDescription("❌ Вы должны находиться в том же голосовом канале, что и бот, чтобы удалять треки!")
-                .setColor("Red");
-            return await interaction.reply({ embeds: [embed], ephemeral: true });
-        }
-
+        const queueError = await VoiceGuard.checkQueueEmpty(interaction);
+        if (queueError) return await interaction.reply({ embeds: [queueError], ephemeral: true });
 
         if (index === -1) {
             embed.setTitle(`[ERROR]: Track with ID: ${trackId} was not found in queue!`)

@@ -1,6 +1,7 @@
 const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
-const MusicManager = require("../utils/MusicManager");
-const VideoData = require("../utils/VideoData");
+
+const MusicManager = require("../../utils/music/MusicManager");
+const VideoData = require("../../utils/music/VideoData");
 
 const {
     joinVoiceChannel,
@@ -14,15 +15,16 @@ const {
     demuxProbe
 } = require("@discordjs/voice");
 
-const { Ytdl, Quality } = require('@distube/ytdl-core');
-const yt = new Ytdl();
-const { PassThrough } = require('stream');
+const { Ytdl, Quality, parseVideoId  } = require('@distube/ytdl-core');
 
-try {
-    process.env.FFMPEG_PATH = require('ffmpeg-static');
-} catch (e) {
-    console.error("ffmpeg-static не найден");
-}
+const yt = new Ytdl();
+const VoiceGuard = require("../../utils/music/VoiceGuard");
+
+// try {
+    // process.env.FFMPEG_PATH = require('ffmpeg-static');
+// } catch (e) {
+    // console.error("ffmpeg-static не найден");
+// }
 
 async function startResource(guildId, player, url) {
     const rawStream = yt.download(url, {
@@ -39,7 +41,6 @@ async function startResource(guildId, player, url) {
     });
 
     const probed = await demuxProbe(rawStream);
-    console.log("[7] Audio format:", probed.type);
 
     const resource = createAudioResource(probed.stream, {
         inputType: probed.type
@@ -61,14 +62,26 @@ module.exports = {
         const url = interaction.options.getString("url");
 
         const voiceChannel = interaction.member.voice.channel;
-        if (!voiceChannel) {
+
+        const voiceError = await VoiceGuard.checkMemberVoice(interaction);
+        if (voiceError) return await interaction.reply({ embeds: [voiceError], ephemeral: true });
+
+        let isValidUrl = true;
+        try {
+            parseVideoId(url);
+        } catch (error) {
+            isValidUrl = false;
+        }
+
+        if (!isValidUrl) {
             embed.setTitle("[ERROR]")
-                .setDescription("❌ First join in voice channel!")
+                .setDescription("❌ Invalid YouTube URL! Please provide a valid video link.")
                 .setColor("Red");
             return await interaction.reply({ embeds: [embed], ephemeral: true });
         }
 
         await interaction.deferReply();
+
         const videoData = await VideoData.create(url);
         if (!videoData) {
             embed.setTitle("[ERROR]")
@@ -106,7 +119,6 @@ module.exports = {
                     const nextQueue = MusicManager.getQueue(interaction.guildId);
                     if (nextQueue.length > 0) {
                         const nextTrack = nextQueue[0];
-                        console.log(`[NEXT]: Automatically playing: ${nextTrack.title}`);
                         try {
                             await startResource(interaction.guildId, player, nextTrack.url);
                         } catch (err) {
@@ -133,23 +145,16 @@ module.exports = {
             }
             connection.subscribe(player);
 
-            await entersState(connection, VoiceConnectionStatus.Ready, 20_000);
+            await entersState(connection, VoiceConnectionStatus.Ready, 20000);
 
             if (isQueueEmpty) {
                 await startResource(interaction.guildId, player, videoData.url);
-                await entersState(player, AudioPlayerStatus.Playing, 15_000);
-                console.log("[10] Playback started");
-
-                embed.setTitle(`🎶 Сейчас играет: ${videoData.title}`);
-            } else {
-                console.log(`[QUEUE]: Added to queue position #${queue.length}`);
-                embed.setTitle(`📥 Добавлено в очередь (Позиция #${queue.length}): ${videoData.title}`);
+                await entersState(player, AudioPlayerStatus.Playing, 15000);
             }
 
         } catch (error) {
-            console.error("Ошибка во время воспроизведения через ytdl:", error);
             embed.setTitle("[ERROR]")
-                .setDescription("❌ Не удалось запустить аудио-поток.")
+                .setDescription("❌ Failed launch audio stream")
                 .setColor("Red");
             return await interaction.editReply({ embeds: [embed] });
         }
