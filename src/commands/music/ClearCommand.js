@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, EmbedBuilder} = require("discord.js");
+const { SlashCommandBuilder, EmbedBuilder, MessageFlags} = require("discord.js");
 const MusicManager = require("../../utils/music/MusicManager");
 const VoiceGuard = require("../../utils/music/VoiceGuard");
 
@@ -14,7 +14,7 @@ module.exports = {
         const randomText = text[Math.floor(Math.random() * text.length)];
 
         const queueError = await VoiceGuard.checkQueueEmpty(interaction);
-        if (queueError) return await interaction.reply({ embeds: [queueError], ephemeral: true });
+        if (queueError) return await interaction.reply({ embeds: [queueError], flags: MessageFlags.Ephemeral });
 
         const embed = new EmbedBuilder()
             .setTitle("Queue successfully cleared!")

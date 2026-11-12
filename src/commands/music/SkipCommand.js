@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, EmbedBuilder} = require("discord.js");
+const { SlashCommandBuilder, EmbedBuilder, MessageFlags} = require("discord.js");
 const MusicManager = require("../../utils/music/MusicManager");
 const VideoData = require("../../utils/music/VideoData");
 const VoiceGuard = require("../../utils/music/VoiceGuard");
@@ -12,16 +12,16 @@ module.exports = {
         const serverQueue = MusicManager.getQueue(interaction.guild.id);
 
         const voiceError = await VoiceGuard.checkSameVoice(interaction);
-        if (voiceError) return await interaction.reply({ embeds: [voiceError], ephemeral: true });
+        if (voiceError) return await interaction.reply({ embeds: [voiceError], flags: MessageFlags.Ephemeral });
 
         const queueError = await VoiceGuard.checkQueueEmpty(interaction);
-        if (queueError) return await interaction.reply({ embeds: [queueError], ephemeral: true });
+        if (queueError) return await interaction.reply({ embeds: [queueError], flags: MessageFlags.Ephemeral });
 
         if (serverQueue.length < 2) {
             embed.setTitle("[ERROR]: There is no next track in the queue!")
                 .setDescription("❌ Add music in queue with command /play")
                 .setColor("Red");
-            return await interaction.reply({ embeds: [embed], ephemeral: true });
+            return await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
         }
 
         const player = MusicManager.players.get(interaction.guild.id);

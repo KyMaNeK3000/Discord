@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, EmbedBuilder} = require("discord.js");
+const { SlashCommandBuilder, EmbedBuilder, MessageFlags} = require("discord.js");
 const MusicManager = require("../../utils/music/MusicManager");
 const VideoData = require("../../utils/music/VideoData");
 const VoiceGuard = require("../../utils/music/VoiceGuard");
@@ -12,7 +12,7 @@ module.exports = {
         const serverQueue = MusicManager.getQueue(interaction.guild.id);
 
         const queueError = await VoiceGuard.checkQueueEmpty(interaction);
-        if (queueError) return await interaction.reply({ embeds: [queueError], ephemeral: true });
+        if (queueError) return await interaction.reply({ embeds: [queueError], flags: MessageFlags.Ephemeral });
 
         const firstTrack = serverQueue[0];
 

@@ -20,7 +20,7 @@ module.exports = {
                 .setDescription("Attach an image or file (optional)")
                 .setRequired(false)),
     async execute(interaction) {
-        await interaction.deferReply({ ephemeral: true });
+        await interaction.deferReply({ flags: MessageFlags.Ephemeral });
         const embed = new EmbedBuilder();
 
         if (!ALLOWED_USERS.includes(interaction.user.id)) {
