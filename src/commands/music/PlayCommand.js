@@ -11,7 +11,8 @@ const {
     VoiceConnectionStatus,
     entersState,
     NoSubscriberBehavior,
-    demuxProbe
+    demuxProbe,
+    getVoiceConnection
 } = require("@discordjs/voice");
 
 const { Ytdl, Quality, parseVideoId  } = require('@distube/ytdl-core');
@@ -26,7 +27,7 @@ async function startResource(guildId, player, url) {
             hasAudio: true,
             hasVideo: false,
         },
-        highWaterMark: 1 << 20,
+        highWaterMark: 1 << 25,
     });
 
     rawStream.on('error', error => {
@@ -36,7 +37,8 @@ async function startResource(guildId, player, url) {
     const probed = await demuxProbe(rawStream);
 
     const resource = createAudioResource(probed.stream, {
-        inputType: probed.type
+        inputType: probed.type,
+        inlineVolume: false
     });
 
     player.play(resource);
@@ -83,19 +85,37 @@ module.exports = {
             return await interaction.editReply({ embeds: [embed] });
         }
 
-        const queue = MusicManager.getQueue(interaction.guildId);
-        const isQueueEmpty = queue.length === 0;
+        const isIdle = !player || player.state.status === AudioPlayerStatus.Idle;
 
         MusicManager.add(interaction.guildId, videoData);
 
         try {
-            const connection = joinVoiceChannel({
-                channelId: voiceChannel.id,
-                guildId: interaction.guildId,
-                adapterCreator: interaction.guild.voiceAdapterCreator,
-                selfDeaf: false,
-                selfMute: false
-            });
+            let connection = getVoiceConnection(interaction.guildId);
+
+            if (!connection || connection.joinConfig.channelId !== voiceChannel.id) {
+                connection = joinVoiceChannel({
+                    channelId: voiceChannel.id,
+                    guildId: interaction.guildId,
+                    adapterCreator: interaction.guild.voiceAdapterCreator,
+                    selfDeaf: false,
+                    selfMute: false
+                });
+
+                connection.on(VoiceConnectionStatus.Disconnected, async () => {
+                    try {
+                        await Promise.race([
+                            entersState(connection, VoiceConnectionStatus.Signalling, 5000),
+                            entersState(connection, VoiceConnectionStatus.Connecting, 5000),
+                        ]);
+                    } catch (error) {
+                        connection.destroy();
+                        MusicManager.players.delete(interaction.guildId);
+                        while (MusicManager.getQueue(interaction.guildId).length > 0) {
+                            MusicManager.skip(interaction.guildId);
+                        }
+                    }
+                });
+            }
 
             let player = MusicManager.players.get(interaction.guildId);
             if (!player) {
@@ -140,14 +160,18 @@ module.exports = {
 
             await entersState(connection, VoiceConnectionStatus.Ready, 20000);
 
-            if (isQueueEmpty) {
-                await startResource(interaction.guildId, player, videoData.url);
+            if (isIdle) {
+                const currentQueue = MusicManager.getQueue(interaction.guildId);
+                await startResource(interaction.guildId, player, currentQueue[0].url);
                 await entersState(player, AudioPlayerStatus.Playing, 15000);
             }
 
         } catch (error) {
+            console.error("[EXECUTION ERROR]:", error);
+            MusicManager.skip(interaction.guildId);
+
             embed.setTitle("[ERROR]")
-                .setDescription("❌ Failed launch audio stream")
+                .setDescription("❌ Failed to launch audio stream")
                 .setColor("Red");
             return await interaction.editReply({ embeds: [embed] });
         }

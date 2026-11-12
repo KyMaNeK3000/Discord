@@ -9,6 +9,10 @@
     "libsodium-wrappers": "^0.8.4",
     "nodemon": "^3.1.14"
   },
+  "allowScripts": {
+    "@discordjs/opus": true,
+    "ffmpeg-static": true
+  },
   "name": "0discord0",
   "version": "1.0.0",
   "description": "",
