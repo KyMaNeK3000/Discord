@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
+const { SlashCommandBuilder, EmbedBuilder, MessageFlags } = require("discord.js");
 
 const MusicManager = require("../../utils/music/MusicManager");
 const VideoData = require("../../utils/music/VideoData");
@@ -59,7 +59,7 @@ module.exports = {
         const voiceChannel = interaction.member.voice.channel;
 
         const voiceError = await VoiceGuard.checkMemberVoice(interaction);
-        if (voiceError) return await interaction.reply({ embeds: [voiceError], ephemeral: true });
+        if (voiceError) return await interaction.reply({ embeds: [voiceError], flags: MessageFlags.Ephemeral });
 
         let isValidUrl = true;
         try {
@@ -72,7 +72,7 @@ module.exports = {
             embed.setTitle("[ERROR]")
                 .setDescription("❌ Invalid YouTube URL! Please provide a valid video link.")
                 .setColor("Red");
-            return await interaction.reply({ embeds: [embed], ephemeral: true });
+            return await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
         }
 
         await interaction.deferReply();

@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, EmbedBuilder} = require("discord.js");
+const { SlashCommandBuilder, EmbedBuilder, MessageFlags} = require("discord.js");
 const MusicManager = require("../../utils/music/MusicManager");
 const VoiceGuard = require("../../utils/music/VoiceGuard");
 
@@ -17,16 +17,16 @@ module.exports = {
         const index = MusicManager.findIndexById(interaction.guildId, trackId);
 
         const voiceError = await VoiceGuard.checkSameVoice(interaction);
-        if (voiceError) return await interaction.reply({ embeds: [voiceError], ephemeral: true });
+        if (voiceError) return await interaction.reply({ embeds: [voiceError], flags: MessageFlags.Ephemeral });
 
         const queueError = await VoiceGuard.checkQueueEmpty(interaction);
-        if (queueError) return await interaction.reply({ embeds: [queueError], ephemeral: true });
+        if (queueError) return await interaction.reply({ embeds: [queueError], flags: MessageFlags.Ephemeral });
 
         if (index === -1) {
             embed.setTitle(`[ERROR]: Track with ID: ${trackId} was not found in queue!`)
                 .setDescription("❌ Please provide the correct music ID, you can check it in the queue")
                 .setColor("Red");
-            return await interaction.reply({ embeds: [embed], ephemeral: true });
+            return await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
         }
 
         const videoData = serverQueue[index];
