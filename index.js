@@ -27,7 +27,7 @@ http.createServer((req, res) => {
   res.end('Bot is alive!');
 }).listen(3000);
 
-BotClient.on("ready", async (Bot) => {
+BotClient.on("clientReady", async (Bot) => {
     const commands = [];
     let commandsPath = path.join(__dirname, "src", "commands");
 
