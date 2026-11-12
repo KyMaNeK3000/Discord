@@ -85,6 +85,7 @@ module.exports = {
             return await interaction.editReply({ embeds: [embed] });
         }
 
+        let player = MusicManager.players.get(interaction.guildId);
         const isIdle = !player || player.state.status === AudioPlayerStatus.Idle;
 
         MusicManager.add(interaction.guildId, videoData);
@@ -117,7 +118,6 @@ module.exports = {
                 });
             }
 
-            let player = MusicManager.players.get(interaction.guildId);
             if (!player) {
                 player = createAudioPlayer({
                     behaviors: {

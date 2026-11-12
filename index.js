@@ -3,6 +3,7 @@ const { DatabaseSync } = require("node:sqlite")
 
 const fs = require("node:fs")
 const path = require("node:path")
+const http = require("http")
 
 const dotenv = require("dotenv")
 dotenv.config()
@@ -21,7 +22,12 @@ const BotClient = new Client({
 
 BotClient.commands = new Collection();
 
-BotClient.on("ready", async (Bot) => {
+http.createServer((req, res) => {
+  res.writeHead(200, { 'Content-Type': 'text/plain' });
+  res.end('Bot is alive!');
+}).listen(3000);
+
+BotClient.on("clientReady", async (Bot) => {
     const commands = [];
     let commandsPath = path.join(__dirname, "src", "commands");
 
